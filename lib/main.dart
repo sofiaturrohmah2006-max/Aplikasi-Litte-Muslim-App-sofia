@@ -286,3 +286,125 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
   }
+
+
+  class HijaiyahScreen extends StatelessWidget {
+    const HijaiyahScreen({super.key});
+
+    @override
+  Widget build(BuildContext context) {
+    final List<Map<String, String>> dataHijaiyah = [
+      {'h': 'ا', 'n': 'Alif'}, {'h': 'ب', 'n': 'Ba'}, {'h': 'ت', 'n': 'Ta'},
+      {'h': 'ت', 'n': 'Tsa'}, {'h': 'ج', 'n': 'Jim'}, {'h': 'ح', 'n': 'Ha'},
+      {'h': 'خ', 'n': 'Kho'}, {'h': 'د', 'n': 'Dal'}, {'h': 'ذ', 'n': 'Dzal'},
+      {'h': 'ر', 'n': 'Ro'}, {'h': 'ز', 'n': 'Zay'}, {'h': 'س', 'n': 'Sin'},
+      {'h': 'ط', 'n': 'Syin'}, {'h': 'ظ', 'n': 'Zho'}, {'h': 'ع', 'n': 'Ain'},
+      {'h': 'غ', 'n': 'Ghoin'}, {'h': 'ف', 'n': 'Fa'}, {'h': 'ق', 'n': 'Qof'},
+      {'h': 'ك', 'n': 'Kaf'}, {'h': 'ل', 'n': 'Lam'}, {'h': 'م', 'n': 'Mim'},
+      {'h': 'ن', 'n': 'Nun'}, {'h': 'و', 'n': 'Wau'}, {'h': 'هـ', 'n': 'Ha'},
+      {'h': 'لا', 'n': 'Lam Alif'}, {'h': 'ء', 'n': 'Hamzah'}, {'h': 'ي', 'n': 'Ya'},
+    ];
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF0F9FF),
+      appBar: AppBar(title: const Text("Taman Hijaiyah"), backgroundColor: const Color(0xFF48BFE3), foregroundColor: Colors.white),
+      body: GridView.builder(
+        padding: const EdgeInsets.all(20),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3, mainAxisSpacing: 15, crossAxisSpacing: 15),
+          itemCount: dataHijaiyah.length,
+          itemBuilder: (context, i) => InkWell(
+            onTap: () => VoiceServise.speak(dataHijaiyah[i]['h']!),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
+                border: Border.all(color: Colors.blue[100]!, width: 2),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(dataHijaiyah[i]['h']!, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFF00B4D8))),
+                  Text(dataHijaiyah[i]['h']!, style: const TextStyle(fontSize: 14, color: Colors.orange)), 
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+
+
+  class DoaScreen extends StatelessWidget {
+    const DoaScreen({super.key});
+
+    @override
+  Widget build(BuildContext context) {
+    final List<Map<String, String>> doaList = [
+      {"judul": "Doa Sebelum Makan", "arab": "اللَّهُمَّ بَارِكْ لَنَا فِيمَا رَزَقْتَنَا وَقِنَا عَذَابَ النَّارِ", "latin": "Allahumma barik lana fima razaqtana wa qina 'adzaban nar."},
+      {"judul": "Doa Sesudah Makan", "arab": "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا وَجَعَلَنَا مُسْلِمِينَ", "latin": "Alhamdulillahilladzi ath' amana wa saqana wa ja' alana muslimin."},
+      {"judul": "Doa Sebelum Tidur", "arab": "بِاسْمِكَ اللَّهُمَّ أَحْيَا وَأَمُوتُ", "latin": "Bismika allahummah ahya wa amutu."},
+      {"judul": "Doa Bangun Tidur", "arab": "الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ", "latin": "Alhamdulillahiladzi ahyana ba'da ma amatana wa ilaihin nusyur."},
+      {"judul": "Doa Masuk Kamar Mandi", "arab": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْخُبُثِ وَالْخَبَائِثِ", "latin": "Allahummah inni a'udzu bika minal khubutsi wal khabaits."},
+      {"judul": "Doa Keluar Kamar Mandi", "arab": "غُفْرَانَكَ الْحَمْدُ لِلَّهِ الَّذِي أَذْهَبَ عَنِّي الْأَذَى وَعَافَانِي", "latin": "Ghufranakal hamdulillahilladzi adza wa 'afani."},
+      {"judul": "Doa Berpakaian", "arab": "الْحَمْدُ لِلَّهِ الَّذِي كَسَانِي هَذَا وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلَا قُوَّةٍ", "latin": "Alhamdullahuladzi kasaanii haadzaats-tsauba wa razaqanihi min ghairi haulin minnii wa laa."},
+      {"judul": "Doa Bercermin", "arab": "اللَّهُمَّ كَمَا حَسَّنْتَ خَلْقِي فَحَسِّنْ خُلُقِي", "latin": "Allahumma kamaa hassanta khalqi fa hassin khuluqi."},
+      {"judul": "Doa Masuk Masjid", "arab": "اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ", "latin": "Allahummaftahli abwaba rahmatika."},
+      {"judul": "Doa Keluar Masjid", "arab": "اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ", "latin": "Allahumma innias'aluka min fadlik."},
+      {"judul": "Doa Setelah Wudhu", "arab": "أَشْهَدُ أَنْ لَا إِلَهَ إِلَّا اللَّهُ وَأَشْهَدُ أَنْ مُحَمَّدًا عَبْدُهُ وَرَسُولُهُ", "latin": "asyhadu alla ilaha illallaahu wahdahu laa syariika lahu,wa asyhadu anna muhammadan'abduhu wa rasuuluhu."},
+      {"judul": "Doa Sebelum Belajar", "arab": "رَبِّ زِدْنِي عِلْمًا وَارْزُقْنِي فَهْمًا", "latin": "Rabbi zidni 'ilman warzuqni fahman."},
+      {"judul": "Doa Untuk Orang Tua","arab": "رَبِّ اغْفِرْ لِي وَلِوَالِدَيَّ وَارْحَمْهُمَا كَمَا رَبَّيَانِي صَغِيرًا", "latin": "Rabbighfirli waliwalidayya warhamhumaa kamaa rabbayaanii shaghiiraa."},
+      {"judul": "Doa Kebaikan Dunia Akhirat", "arab": "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ", "latin": "Rabbana aatina fiddunya hasanah wa filakhirati hasanah, wa qinaa adzabannaari."},
+      {"judul": "Doa Keluar Rumah", "arab": "بِسْمِ اللَّهِ تَوَكَّلْتُ عَلَى اللَّهِ لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ", "latin": "Bismillahi tawakkaltu 'alallah,laa hawla wa laa quwwata illaabillaah."},
+      {"judul": "Doa Naik Kendaraan", "arab": "سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ", "latin": "Subhaanalladzii sakhkhoro lanaa hadzaa wa maa kunnaa lahu muqriniin, wa innaa ilaa raobbina lamunqolibuun."},
+      {"judul": "Doa Ketika Hujan", "arab": "اللَّهُمَّ صَيِّبًا نَافِعًا", "latin": "Allahummah shayyiban nafi'an."},
+      {"judul": "Doa Mohon Perlindungan", "arab": "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ", "latin": "A'uudzu bi kalimaatillaahit tammaati min syarri maa khalaq."},
+    ];
+
+    return Scaffold(
+      appBar: AppBar(title: Text("Hafalan Doa"), backgroundColor: Colors.orangeAccent, foregroundColor: Colors.white),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(15),
+        itemCount: doaList.length,
+        itemBuilder: (context, i) => Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          elevation: 2,
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            leading: const CircleAvatar(backgroundColor: Color(0xFFFFF3E0), child: Text("✨")),
+            title: Text(doaList[i]['judul']!, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0XFFE65100))),
+            trailing: const Icon(Icons.play_circle_fill, color: Colors.orangeAccent, size: 30),
+            onTap: () {
+              VoiceServise.speak(doaList[i]['arab']!);
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(35))),
+                builder: (context) => Container(
+                  padding: const EdgeInsets.all(30.3),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.grey[300], borderRadius:  BorderRadius.circular(10))),
+                      const SizedBox(height: 20),
+                      Text(doaList[i]['judul']!, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.orange)),
+                      const SizedBox(height: 25),
+                      Text(doaList[i]['arab']!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF40916C))),
+                      const SizedBox(height: 20),
+                      Text(doaList[i]['latin']!, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic, color: Colors.blueGrey)),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ), 
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
