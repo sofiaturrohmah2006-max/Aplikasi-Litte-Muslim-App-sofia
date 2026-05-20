@@ -115,13 +115,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   }
 }
 
-class VoiceServise {
+class VoiceService {
   static final FlutterTts _tts = FlutterTts();
 
   static Future<void> speak(String text) async {
     var languages = await _tts.getLanguages;
-    if (languages.contains ("ar-SA")) {
-      await _tts.setLanguage("ar_SA");
+    if (languages.contains("ar-SA")) {
+      await _tts.setLanguage("ar-SA");
     } else {
       await _tts.setLanguage("en-US");
     }
@@ -131,6 +131,7 @@ class VoiceServise {
   }
 }
 
+// --- SREEN: HOME ---
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -139,7 +140,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String namaAnak = "Sofia";
+  String namaAnak = "Sholeh";
+  bool isDarkMode = false;
+  int highScore =0;
 
   @override
   void initState() {
@@ -150,7 +153,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void _loadNama() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      namaAnak = prefs.getString('nama_user') ?? "Sofia";
+      namaAnak = prefs.getString('nama_user') ?? "Sholeh";
+      highScore =prefs.getInt('high_score') ?? 0;
+      isDarkMode = prefs.getBool('dark_mode') ?? false;
     });
   }
 
@@ -158,11 +163,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFE0F7FA), Color(0xFFFFFFFF), Color(0xFFFFF9C4)],
+            colors: isDarkMode
+              ? [const Color(0xFF1A1A2E), const Color(0xFF16213E), const Color(0xFF0F3460)]
+              : [const Color(0xFFE0F7FA), const Color(0xFFFFFFFF), const Color(0xFFFFF9C4)],
           ),
         ),  
         child: SafeArea(
@@ -173,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    color: isDarkMode ? Colors.black45 : Colors.white.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(40),
                     boxShadow: const [BoxShadow(color: Colors.black, blurRadius: 15)],
                   ),
@@ -194,10 +201,26 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                       ),
-                      const Icon(Icons.auto_awesome, color: Colors.orangeAccent, size:35),
+                      const SizedBox(height: 5),
+                      Text(
+                        "🏆 Skor Tertinggi: $highScore",
+                        style: GoogleFonts.quicksand(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
+                      ),
                     ],
                   ),
                 ),
+              ),
+
+              Switch(
+                value: isDarkMode,
+                activeColor: Colors.orangeAccent,
+                onChanged: (value) async{
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('dark_mode', value);
+                  setState(() {
+                    isDarkMode = value;
+                  });
+                },
               ),
               Expanded(
                 child: GridView.count(
@@ -208,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     _menuCard(context, "Hijaiyah", "🌈", const Color(0xFF48BFE3), const HijaiyahScreen()),
                     _menuCard(context, "Doa Harian","🤲", const Color(0xFFFF9E00), const DoaScreen()),
-                    _menuCard(context, "Kuis Pintar", "🎁", const Color (0xFF4CAF50), const QuizScreen()),
+                    _menuCard(context, "Kuis Pintar", "🎁", const Color (0xFF4CAF50), null),
                     _menuCard(context, "Ganti Nama", "🎨", const Color(0xFFF72585), null),
                   ],
                 ),
@@ -221,33 +244,57 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
 
-  Widget _menuCard(BuildContext context, String title, String emoji, Color color, Widget? target) {
-    return InkWell(
-      onTap: () {
-        if (target != null) {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => target));
-        } else {
-          _showNameDialog();
-        }
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(40),
-          border: Border.all(color: color.withOpacity(0.4), width: 5),
-          boxShadow: [BoxShadow(color: color.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 8))],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 55)),
-            const SizedBox(height: 10),
-            Text(emoji, style: GoogleFonts.bubblegumSans(fontSize: 22, color: Colors.black)),
-          ],
-        ),
+ Widget _menuCard(BuildContext context, String title, String emoji, Color color, Widget? target) {
+  return InkWell(
+    onTap: () {
+      if (title == "Kuis Pintar") {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const QuizScreen())
+  ).then((_) => _loadNama());
+      } else if (target != null) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => target));     
+         } else {
+        _showNameDialog();
+      }
+    },
+    child: Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: color.withOpacity(0.4), width: 5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.2), 
+            blurRadius: 10, 
+            offset: const Offset(0, 8)
+          )
+        ],
       ),
-    );
-  }
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 1. Menampilkan emoji dengan ukuran pas
+          Text(emoji, style: const TextStyle(fontSize: 45)),
+          
+          // 2. Beri jarak kecil antara emoji dan teks
+          const SizedBox(height: 5), 
+          
+          // 3. Menampilkan judul menu dengan font Bubblegum Sans kesukaanmu
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.bubblegumSans(
+                fontSize: 20,          // Ukuran huruf pas untuk menu kotak
+                color: Colors.black87, // Warna teks abu-abu gelap manis
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
   void _showNameDialog() {
     TextEditingController controller = TextEditingController();
@@ -314,7 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisCount: 3, mainAxisSpacing: 15, crossAxisSpacing: 15),
           itemCount: dataHijaiyah.length,
           itemBuilder: (context, i) => InkWell(
-            onTap: () => VoiceServise.speak(dataHijaiyah[i]['h']!),
+            onTap: () => VoiceService.speak(dataHijaiyah[i]['h']!),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -379,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
             title: Text(doaList[i]['judul']!, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0XFFE65100))),
             trailing: const Icon(Icons.play_circle_fill, color: Colors.orangeAccent, size: 30),
             onTap: () {
-              VoiceServise.speak(doaList[i]['arab']!);
+              VoiceService.speak(doaList[i]['arab']!);
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
@@ -406,5 +453,102 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+}
+
+
+class QuizScreen extends StatefulWidget {
+  const QuizScreen({super.key});
+
+  @override
+  State<QuizScreen> createState() => _QuizScreenState();
+}
+              
+class _QuizScreenState extends State<QuizScreen> {
+  int skor = 0; 
+  int indexSoal = 0;
+  final List<Map<String, dynamic>> soal = [
+    {"h": "ا", "o": ["Alif", "Ba", "Ta"], "j": "Alif"},
+    {"h": "ب", "o": ["Jim", "Ba", "Sin"], "j": "Ba"},
+    {"h": "ت", "o": ["Ta", "Tsa", "Alif"],"j": "Ta"},
+    {"h": "ج", "o": ["Ha", "Kho", "Jim"], "j": "Jim"},
+    {"h": "ي", "o": ["Ya", "Wau", "Nun"], "j": "Ya"},
+  ];
+
+  @override
+    Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1FDF4),
+      appBar: AppBar(title: const Text("Main Tebak-tebakan"), backgroundColor: Colors.green, foregroundColor: Colors.white),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30)),
+              child: Text("Skor: ⭐ $skor", style: const TextStyle(fontSize: 45, fontWeight: FontWeight.bold, color: Colors.orange)),
+            ),
+            const SizedBox(height: 20),
+            Text(soal[indexSoal]['h'], style: const TextStyle(fontSize: 80, fontWeight: FontWeight.bold, color: Colors.green)),
+            const SizedBox(height: 30),
+            ...soal[indexSoal]['o'].map((opsi) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 8),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(18),
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.green[800],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Colors.green, width: 2))
+                  ),
+                  onPressed: () {
+                    if (opsi == soal[indexSoal]['j']) setState(() { skor += 20; });
+                    if (indexSoal < soal.length - 1) {
+                      setState(() {indexSoal++; });
+                    } else {
+                      _showFinishDialog();
+                    }
+                  },
+                  child: Text(opsi, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            )),
+          ],
+        ),
+      ),
+    ) ;
+  } 
+
+  void _showFinishDialog() async {
+    final prefs = await SharedPreferences.getInstance();
+    int currentHighScore = prefs.getInt('high_score') ?? 0;
+
+    if (skor > currentHighScore){
+      await prefs.setInt('high_score', skor);
+    }
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        title: const Text("Selesai!🎉", textAlign: TextAlign.center),
+        content: Text("Skor kamu: $skor\n${skor > currentHighScore ? '🎉 Rekor Baru!' : ''}",
+        textAlign: TextAlign.center,
+        style: const TextStyle(fontSize: 18)
+        ),
+        actions: [
+          Center(
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Hebat!"),
+            ),
+          )
+        ],
+      ),
+    ).then((value) => Navigator.pop(context));
   }
 }
