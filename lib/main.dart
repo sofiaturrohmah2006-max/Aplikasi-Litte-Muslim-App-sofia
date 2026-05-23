@@ -73,6 +73,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
    Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
@@ -143,6 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String namaAnak = "Sholeh";
   bool isDarkMode = false;
   int highScore =0;
+  String levelKuis = "Mudah";
 
   @override
   void initState() {
@@ -229,8 +231,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisSpacing: 20,
                   crossAxisSpacing: 20,
                   children: [
-                    _menuCard(context, "Hijaiyah", "🌈", const Color(0xFF48BFE3), const HijaiyahScreen()),
-                    _menuCard(context, "Doa Harian","🤲", const Color(0xFFFF9E00), const DoaScreen()),
+                    _menuCard(context, "Hijaiyah", "🌈", const Color(0xFF48BFE3), const HijaiyahScreen(isDarkMode: isDarkMode)),
+                    _menuCard(context, "Doa Harian","🤲", const Color(0xFFFF9E00), const DoaScreen(isDarkMode: isDarkMode)),
                     _menuCard(context, "Kuis Pintar", "🎁", const Color (0xFF4CAF50), null),
                     _menuCard(context, "Ganti Nama", "🎨", const Color(0xFFF72585), null),
                   ],
@@ -247,13 +249,54 @@ class _HomeScreenState extends State<HomeScreen> {
  Widget _menuCard(BuildContext context, String title, String emoji, Color color, Widget? target) {
   return InkWell(
     onTap: () {
+      // 1. Jika menu yang diklik adalah Kuis Pintar, munculkan Dialog Level
       if (title == "Kuis Pintar") {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const QuizScreen())
-  ).then((_) => _loadNama());
-      } else if (target != null) {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => target));     
-         } else {
-        _showNameDialog();
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            title: const Text("Pilih Level Kuis 🎮", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+            content: SizedBox(
+              height: 250,
+              child: SingleChildScrollView(
+              child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Text("🟢", style: TextStyle(fontSize: 24)),
+                  title: const Text("Level Mudah", style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: const Text("Tebak Huruf Hijaiyah Dasar"),
+                  onTap: () {
+                    levelKuis = "Mudah";
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(level: levelKuis, isDarkMode: isDarkMode))).then((_) => _loadNama());
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Text("🟡", style: TextStyle(fontSize: 24)),
+                  title: const Text("Level Sedang", style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: const Text("Tebak Bunyi Harakat (A, I, U)"),
+                  onTap: () {
+                    levelKuis = "Sedang";
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(level: levelKuis, isDarkMode: isDarkMode))).then((_) => _loadNama());
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+       ),
+     );
+    } 
+      // 2. Jika menu lain yang diklik dan target halamannya ada, langsung pindah halaman
+      else if (target != null) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => target));
+      } 
+      // 3. Jika target kosong (seperti Ganti Nama), munculkan dialog nama
+      else {
+        _showNameDialog(isDarkMode);
       }
     },
     child: Container(
@@ -272,21 +315,16 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // 1. Menampilkan emoji dengan ukuran pas
           Text(emoji, style: const TextStyle(fontSize: 45)),
-          
-          // 2. Beri jarak kecil antara emoji dan teks
           const SizedBox(height: 5), 
-          
-          // 3. Menampilkan judul menu dengan font Bubblegum Sans kesukaanmu
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Text(
               title,
               textAlign: TextAlign.center,
               style: GoogleFonts.bubblegumSans(
-                fontSize: 20,          // Ukuran huruf pas untuk menu kotak
-                color: Colors.black87, // Warna teks abu-abu gelap manis
+                fontSize: 20,          
+                color: Colors.black87, 
               ),
             ),
           ),
@@ -295,7 +333,6 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   );
 }
-
   void _showNameDialog() {
     TextEditingController controller = TextEditingController();
     showDialog(
@@ -336,13 +373,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   class HijaiyahScreen extends StatelessWidget {
-    const HijaiyahScreen({super.key});
+    final bool isDarkMode
+    const HijaiyahScreen({super.key, required this.isDarkMode});
 
     @override
   Widget build(BuildContext context) {
     final List<Map<String, String>> dataHijaiyah = [
       {'h': 'ا', 'n': 'Alif'}, {'h': 'ب', 'n': 'Ba'}, {'h': 'ت', 'n': 'Ta'},
-      {'h': 'ت', 'n': 'Tsa'}, {'h': 'ج', 'n': 'Jim'}, {'h': 'ح', 'n': 'Ha'},
+      {'h': 'ث', 'n': 'Tsa'}, {'h': 'ج', 'n': 'Jim'}, {'h': 'ح', 'n': 'Ha'},
       {'h': 'خ', 'n': 'Kho'}, {'h': 'د', 'n': 'Dal'}, {'h': 'ذ', 'n': 'Dzal'},
       {'h': 'ر', 'n': 'Ro'}, {'h': 'ز', 'n': 'Zay'}, {'h': 'س', 'n': 'Sin'},
       {'h': 'ط', 'n': 'Syin'}, {'h': 'ظ', 'n': 'Zho'}, {'h': 'ع', 'n': 'Ain'},
@@ -353,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F9FF),
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFE0F7FA),
       appBar: AppBar(title: const Text("Taman Hijaiyah"), backgroundColor: const Color(0xFF48BFE3), foregroundColor: Colors.white),
       body: GridView.builder(
         padding: const EdgeInsets.all(20),
@@ -386,7 +424,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   class DoaScreen extends StatelessWidget {
-    const DoaScreen({super.key});
+    final bool isDarkMode;
+    const DoaScreen({super.key, required this.isDarkMode});
 
     @override
   Widget build(BuildContext context) {
@@ -412,11 +451,14 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: Text("Hafalan Doa"), backgroundColor: Colors.orangeAccent, foregroundColor: Colors.white),
+      backgroundColor: widget.isDarkMode ? const Color(0xFF121212) : const Color(0xFFFFF9C4),
+      appBar: AppBar(title: Text("Hafalan Doa"), 
+      backgroundColor: Colors.orangeAccent, foregroundColor: Colors.white),
       body: ListView.builder(
         padding: const EdgeInsets.all(15),
         itemCount: doaList.length,
         itemBuilder: (context, i) => Card(
+          color: widget.isDarkMode ? Colors.black45 : Colors.white,
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           elevation: 2,
@@ -458,7 +500,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({super.key});
+  final String level;
+  const QuizScreen({super.key, required this.level});
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -467,7 +510,13 @@ class QuizScreen extends StatefulWidget {
 class _QuizScreenState extends State<QuizScreen> {
   int skor = 0; 
   int indexSoal = 0;
-  final List<Map<String, dynamic>> soal = [
+  late List<Map<String, dynamic>> soal;
+
+  @override
+  void initState() {
+    super.initState();
+  
+  final List<Map<String, dynamic>> soalMudah = [
     {"h": "ا", "o": ["Alif", "Ba", "Ta"], "j": "Alif"},
     {"h": "ب", "o": ["Jim", "Ba", "Sin"], "j": "Ba"},
     {"h": "ت", "o": ["Ta", "Tsa", "Alif"],"j": "Ta"},
@@ -475,12 +524,22 @@ class _QuizScreenState extends State<QuizScreen> {
     {"h": "ي", "o": ["Ya", "Wau", "Nun"], "j": "Ya"},
   ];
 
+  final List<Map<String,dynamic>> soalSedang = [
+    {'h': 'بَ', 'o': ['Ba', 'Bi', 'Bu', 'Ban'], 'j': 'Ba'},
+    {'h': 'تِ', 'o': ['Ta', 'Ti', 'Tu', 'Tin'], 'j': 'Ti'},
+    {'h': 'ثُ', 'o': ['Tsa', 'Tsi', 'Tsu', 'Tsun'], 'j': 'Tsu'},
+  ];
+
+  soal = widget.level == "Mudah" ? soalMudah : soalSedang;
+}
+
   @override
     Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF1FDF4),
       appBar: AppBar(title: const Text("Main Tebak-tebakan"), backgroundColor: Colors.green, foregroundColor: Colors.white),
       body: Center(
+        child: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -515,10 +574,11 @@ class _QuizScreenState extends State<QuizScreen> {
                 ),
               ),
             )),
-          ],
-        ),
+           ],
+         ),
+       ),
       ),
-    ) ;
+     );
   } 
 
   void _showFinishDialog() async {
