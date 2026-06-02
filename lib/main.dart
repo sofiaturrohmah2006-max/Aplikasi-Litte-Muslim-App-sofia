@@ -118,17 +118,72 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
 class VoiceService {
   static final FlutterTts _tts = FlutterTts();
+  static bool _isInitialized = false;
 
-  static Future<void> speak(String text) async {
-    var languages = await _tts.getLanguages;
-    if (languages.contains("ar-SA")) {
-      await _tts.setLanguage("ar-SA");
-    } else {
-      await _tts.setLanguage("en-US");
+  static Future<void> _initTts() async {
+    
+    try {
+      _tts.setErrorHandler((msg) {
+        debugPrint("TTS Native Error: $msg");
+        _isInitialized = false; 
+      });
+
+      List<dynamic> languages = await _tts.getLanguages;
+      
+      bool mendukungArab = languages.any((lang) => 
+        lang.toString().toLowerCase().contains('ar'));
+
+      if (mendukungArab) {
+        await _tts.setLanguage("ar-SA");
+      } else {
+        await _tts.setLanguage("id-ID"); 
+      }
+
+      await _tts.setPitch(1.3);
+      await _tts.setSpeechRate(0.4);
+      await _tts.setVolume(1.0); 
+
+      _isInitialized = true;
+    } catch (e) {
+      debugPrint("Gagal inisialisasi TTS: $e");
+      _isInitialized = false;
     }
-    await _tts.setPitch(1.3);
-    await _tts.setSpeechRate(0.4);
-    await _tts.speak(text);
+  }
+  static Future<void> stop() async {
+     await _tts.stop();
+  }
+  static Future<void> speak(String text) async {
+    // 1. Paksa audio yang sedang berjalan untuk langsung berhenti seketika
+    await _tts.stop(); 
+
+    if (text.isEmpty) return;
+
+    if (!_isInitialized) {
+      await _initTts();
+    }
+
+    try {
+      // 2. Cek apakah teks mengandung huruf Arab atau Indonesia
+      if (RegExp(r'[\u0600-\u06FF]').hasMatch(text)) {
+        await _tts.setLanguage("ar-SA");
+      } else {
+        await _tts.setLanguage("id-ID");
+      }
+
+      // Beri jeda super singkat agar engine TTS siap memulai suara baru
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      var result = await _tts.speak(text);
+      
+      if (result == 1) {
+        debugPrint("TTS Berhasil diperintahkan untuk berbicara: $text");
+      } else {
+        debugPrint("Engine TTS menolak berbicara (Result: $result)");
+      }
+    } catch (e) {
+      debugPrint("TTS Error saat memutar: $e");
+      _isInitialized = false; 
+    }
   }
 }
 
@@ -152,11 +207,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadNama();
   }
 
+
   void _loadNama() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       namaAnak = prefs.getString('nama_user') ?? "Sholeh";
-      highScore =prefs.getInt('high_score') ?? 0;
+      highScore = prefs.getInt('highscore') ?? 0;
       isDarkMode = prefs.getBool('dark_mode') ?? false;
     });
   }
@@ -198,15 +255,21 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Halo Teman Pintar!", style: GoogleFonts.quicksand(fontSize: 14, color: Colors.blueGrey)),
-                            Text(namaAnak, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold,color: Color(0xFF0077B6))),
+                            Text(
+                              "Halo Teman Pintar!", 
+                              style: GoogleFonts.quicksand(fontSize: 16, color: Colors.blueGrey),
+                            ),
+                            Text(
+                              namaAnak, 
+                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0077B6)),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              "🏆 skor Tertinggi: $highScore",
+                              style: GoogleFonts.quicksand(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
+                            ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        "🏆 Skor Tertinggi: $highScore",
-                        style: GoogleFonts.quicksand(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
                       ),
                     ],
                   ),
@@ -230,9 +293,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisCount: 2,
                   mainAxisSpacing: 20,
                   crossAxisSpacing: 20,
+                  childAspectRatio: 0.75,
                   children: [
-                    _menuCard(context, "Hijaiyah", "🌈", const Color(0xFF48BFE3), const HijaiyahScreen(isDarkMode: isDarkMode)),
-                    _menuCard(context, "Doa Harian","🤲", const Color(0xFFFF9E00), const DoaScreen(isDarkMode: isDarkMode)),
+                    _menuCard(context, "Hijaiyah", "🌈", const Color(0xFF48BFE3), HijaiyahScreen(isDarkMode: isDarkMode)),
+                    _menuCard(context, "Doa Harian","🤲", const Color(0xFFFF9E00), DoaScreen(isDarkMode: isDarkMode)),
                     _menuCard(context, "Kuis Pintar", "🎁", const Color (0xFF4CAF50), null),
                     _menuCard(context, "Ganti Nama", "🎨", const Color(0xFFF72585), null),
                   ],
@@ -280,7 +344,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () {
                     levelKuis = "Sedang";
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(level: levelKuis, isDarkMode: isDarkMode))).then((_) => _loadNama());
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => QuizScreen(level: levelKuis, isDarkMode: isDarkMode))
+                  ).then((_) => _loadNama());
                   },
                 ),
               ],
@@ -290,13 +355,13 @@ class _HomeScreenState extends State<HomeScreen> {
        ),
      );
     } 
-      // 2. Jika menu lain yang diklik dan target halamannya ada, langsung pindah halaman
+      
       else if (target != null) {
         Navigator.push(context, MaterialPageRoute(builder: (context) => target));
       } 
-      // 3. Jika target kosong (seperti Ganti Nama), munculkan dialog nama
+      
       else {
-        _showNameDialog(isDarkMode);
+        _showNameDialog();
       }
     },
     child: Container(
@@ -315,15 +380,15 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 45)),
-          const SizedBox(height: 5), 
+          Text(emoji, style: const TextStyle(fontSize: 55)),
+          const SizedBox(height: 12), 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Text(
               title,
               textAlign: TextAlign.center,
               style: GoogleFonts.bubblegumSans(
-                fontSize: 20,          
+                fontSize: 18,          
                 color: Colors.black87, 
               ),
             ),
@@ -373,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   class HijaiyahScreen extends StatelessWidget {
-    final bool isDarkMode
+    final bool isDarkMode;
     const HijaiyahScreen({super.key, required this.isDarkMode});
 
     @override
@@ -383,7 +448,8 @@ class _HomeScreenState extends State<HomeScreen> {
       {'h': 'ث', 'n': 'Tsa'}, {'h': 'ج', 'n': 'Jim'}, {'h': 'ح', 'n': 'Ha'},
       {'h': 'خ', 'n': 'Kho'}, {'h': 'د', 'n': 'Dal'}, {'h': 'ذ', 'n': 'Dzal'},
       {'h': 'ر', 'n': 'Ro'}, {'h': 'ز', 'n': 'Zay'}, {'h': 'س', 'n': 'Sin'},
-      {'h': 'ط', 'n': 'Syin'}, {'h': 'ظ', 'n': 'Zho'}, {'h': 'ع', 'n': 'Ain'},
+      {'h': 'ش', 'n': 'Syin'}, {'h': 'ص', 'n': 'Shod'}, {'h': 'ض', 'n': 'Dhod'},
+      {'h': 'ط', 'n': 'Tho'}, {'h': 'ظ', 'n': 'Zho'}, {'h': 'ع', 'n': 'Ain'},
       {'h': 'غ', 'n': 'Ghoin'}, {'h': 'ف', 'n': 'Fa'}, {'h': 'ق', 'n': 'Qof'},
       {'h': 'ك', 'n': 'Kaf'}, {'h': 'ل', 'n': 'Lam'}, {'h': 'م', 'n': 'Mim'},
       {'h': 'ن', 'n': 'Nun'}, {'h': 'و', 'n': 'Wau'}, {'h': 'هـ', 'n': 'Ha'},
@@ -411,7 +477,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(dataHijaiyah[i]['h']!, style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFF00B4D8))),
-                  Text(dataHijaiyah[i]['h']!, style: const TextStyle(fontSize: 14, color: Colors.orange)), 
+                  Text(dataHijaiyah[i]['n']!, style: const TextStyle(fontSize: 14, color: Colors.orange)), 
                 ],
               ),
             ),
@@ -450,15 +516,19 @@ class _HomeScreenState extends State<HomeScreen> {
       {"judul": "Doa Mohon Perlindungan", "arab": "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ", "latin": "A'uudzu bi kalimaatillaahit tammaati min syarri maa khalaq."},
     ];
 
-    return Scaffold(
-      backgroundColor: widget.isDarkMode ? const Color(0xFF121212) : const Color(0xFFFFF9C4),
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        VoiceService.stop();
+      },
+    child: Scaffold(
+      backgroundColor: isDarkMode ? const Color(0xFF121212) : const Color(0xFFFFF9C4),
       appBar: AppBar(title: Text("Hafalan Doa"), 
       backgroundColor: Colors.orangeAccent, foregroundColor: Colors.white),
-      body: ListView.builder(
+         body: ListView.builder(
         padding: const EdgeInsets.all(15),
         itemCount: doaList.length,
         itemBuilder: (context, i) => Card(
-          color: widget.isDarkMode ? Colors.black45 : Colors.white,
+          color: isDarkMode ? Colors.black45 : Colors.white,
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           elevation: 2,
@@ -494,14 +564,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }
 
 
+
 class QuizScreen extends StatefulWidget {
   final String level;
-  const QuizScreen({super.key, required this.level});
+  final bool isDarkMode;
+
+  const QuizScreen({super.key, required this.level, required this.isDarkMode});
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -536,7 +610,7 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
     Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1FDF4),
+      backgroundColor: widget.isDarkMode ? const Color(0xFF121212) : const Color(0xFFF1FDF4),
       appBar: AppBar(title: const Text("Main Tebak-tebakan"), backgroundColor: Colors.green, foregroundColor: Colors.white),
       body: Center(
         child: SingleChildScrollView(
@@ -563,52 +637,73 @@ class _QuizScreenState extends State<QuizScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: Colors.green, width: 2))
                   ),
                   onPressed: () {
-                    if (opsi == soal[indexSoal]['j']) setState(() { skor += 20; });
+                    // 1. TAMBAHKAN VALIDASI JAWABAN DI SINI
+                    // Jika opsi yang dipilih sama dengan jawaban benar, skor bertambah
+                    if (opsi == soal[indexSoal]['j']) {
+                      setState(() {
+                        skor += 20;
+                      });
+                    }
+
+                    // 2. CEK APAKAH MASIH ADA SOAL BERIKUTNYA
                     if (indexSoal < soal.length - 1) {
-                      setState(() {indexSoal++; });
+                      setState(() {
+                        indexSoal++;
+                      });
                     } else {
-                      _showFinishDialog();
+                      // Jika ini adalah soal terakhir, beri jeda 100 milidetik agar State skor tenang,
+                      // baru panggil fungsi dialog selesai secara aman
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        _showFinishDialog();
+                      });
                     }
                   },
                   child: Text(opsi, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 ),
               ),
             )),
-           ],
-         ),
-       ),
+          ],
+        ),
       ),
-     );
-  } 
+    ),
+  );
+}
 
-  void _showFinishDialog() async {
+  // --- BERIKUT ADALAH FUNGSI DIALOG YANG SUDAH DIPERBAIKI ---
+ void _showFinishDialog() async {
     final prefs = await SharedPreferences.getInstance();
-    int currentHighScore = prefs.getInt('high_score') ?? 0;
 
-    if (skor > currentHighScore){
-      await prefs.setInt('high_score', skor);
-    }
+    // 1. LANGSUNG SIMPAN SKOR TERBARU (Hapus kondisi 'if (skor >= currentHighScore)')
+    // Dengan begini, jika anak dapat skor 20, halaman utama akan langsung ikut berubah jadi 20.
+    await prefs.setInt('highscore', skor);
 
     if (!mounted) return;
 
     showDialog(
       context: context,
+      barrierDismissible: false, 
       builder: (c) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         title: const Text("Selesai!🎉", textAlign: TextAlign.center),
-        content: Text("Skor kamu: $skor\n${skor > currentHighScore ? '🎉 Rekor Baru!' : ''}",
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 18)
+        content: Text(
+          "Skor kamu: $skor",
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 18),
         ),
         actions: [
           Center(
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                // Tutup kotak dialog
+                Navigator.pop(context);
+                // Tutup QuizScreen dan langsung picu refresh di HomeScreen
+                Navigator.pop(context);
+              },
               child: const Text("Hebat!"),
             ),
           )
         ],
       ),
-    ).then((value) => Navigator.pop(context));
+    ); 
   }
 }
